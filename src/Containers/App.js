@@ -1,47 +1,51 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import CardList from '../Presentations/CardList';
-import SearchBox from '../Presentations/SearchBox';
 import Scroll from '../Presentations/Scroll';
-import Error from '../Presentations/Error';
+import SearchBox from '../Presentations/SearchBox';
+import { useSelector, useDispatch } from 'react-redux';
+import { setSearchField, requestRobots } from '../Action'
 
-class App extends Component {
-  constructor() {
-    super()
-    this.state = {
-      robots: [],
-      searchfield: ''
-    }
-  }
 
-  componentDidMount() {
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then(response=> response.json())
-      .then(users => {this.setState({ robots: users})});
-  }
+const App = () =>{
 
-  onSearchChange = (event) => {
-    this.setState({ searchfield: event.target.value })
-  }
+    const [searchResults, setSearchResults] = useState([]);
 
-  render() {
-    const { robots, searchfield } = this.state;
-    const filteredRobots = robots.filter(robot =>{
-      return robot.name.toLowerCase().includes(searchfield.toLowerCase());
-    })
-    return !robots.length ?
-      <h1>Loading</h1> :
-      (
-        <div className='tc'>
-          <h1 className='f1'>RoboFamily</h1>
-          <SearchBox searchChange={this.onSearchChange}/>
-          <Scroll>
-          <Error>
-            <CardList robots={filteredRobots} />
-          </Error>
-        </Scroll>
+    const text = useSelector(state => state.searchRobots.searchField)
+
+    const robosUsers = useSelector(state => state.getRobotsReducer.users)
+    
+    const dispatch = useDispatch();
+    debugger;
+    const onSearchChange = (e) => {
+        dispatch(setSearchField(e.target.value))
+    };
+
+    useEffect(() =>  {
+        dispatch(requestRobots());
+    }, [dispatch])
+
+    useEffect(() => {
+        let filteredRobots = robosUsers.filter(robots => {
+            return(
+                robots.name.toLowerCase().includes(text.toLowerCase())
+            );
+        });
+        setSearchResults(filteredRobots);
+    }, [text,robosUsers])
+
+    const newRobot = searchResults;
+
+    return(
+        <div className="tc">
+            <Scroll>
+                <h1 className="f2">RoboFamily</h1>
+                <SearchBox searchChange={ onSearchChange }/>
+            </Scroll>
+                {
+                    text === "" ? <CardList robots={ robosUsers }/> : <CardList robots={ newRobot }/>
+                }
         </div>
-      );
-  }
+    );
 }
 
 export default App;
